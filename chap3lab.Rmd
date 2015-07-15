@@ -1,0 +1,195 @@
+---
+title: "chap3lab"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(MASS)
+library(ISLR)
+```
+
+Simple Linear Regression
+
+```{r}
+names(Boston)
+
+lm.fit = lm(medv~lstat, data=Boston)
+attach(Boston)
+lm.fit = lm(medv~lstat)
+
+lm.fit
+```
+
+
+Get summary of fit:
+```{r}
+summary(lm.fit)
+
+names(lm.fit)
+
+```
+
+
+
+Get confidence intervals for coefficients:
+```{r}
+confint(lm.fit)
+
+```
+
+
+
+Get confidence intervals for prediction:
+```{r}
+predict(lm.fit, data.frame(lstat=(c(5,10,15))),interval="confidence")
+
+```
+
+
+Get prediction intervals for prediction:
+```{r}
+predict(lm.fit, data.frame(lstat=(c(5,10,15))),interval="prediction")
+
+```
+
+
+Plot the data and the linear fit:
+```{r}
+plot(lstat,medv)
+abline(lm.fit)
+```
+
+
+
+
+Plot model statistics:
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit)
+```
+
+
+
+More diagnostic plots:
+```{r}
+plot(predict(lm.fit), residuals(lm.fit))
+plot(predict(lm.fit), rstudent(lm.fit))
+
+```
+
+
+
+Plot the leverage statistics and find the maximum value:
+```{r}
+plot(hatvalues(lm.fit))
+
+which.max(hatvalues(lm.fit))
+
+```
+
+
+
+
+# Multiple Linear Regression
+```{r}
+
+lm.fit = lm(medv~lstat+age, data=Boston)
+
+summary(lm.fit)
+```
+
+
+Use all variables:
+```{r}
+lm.fit = lm(medv~.,data=Boston)
+summary(lm.fit)
+```
+
+
+
+
+Examine the variance inflation factor:
+```{r}
+library(car)
+vif(lm.fit)
+```
+
+
+Regression on all but one variable:
+```{r}
+lm.fit1 = lm(medv~.-age,data=Boston)
+summary(lm.fit1)
+```
+
+
+
+# Interaction Terms
+```{r}
+
+summary(lm(medv~lstat*age,data=Boston))
+```
+
+
+
+
+
+# Nonlinear Transformations of the Predictors
+```{r}
+lm.fit2 = lm(medv~lstat+I(lstat^2))
+
+summary(lm.fit2)
+```
+
+
+
+# Use ANOVA to compare models:
+```{r}
+lm.fit = lm(medv~lstat)
+
+anova(lm.fit,lm.fit2)
+
+```
+
+
+
+# Qualitative predictors
+```{r}
+fix(Carseats)
+
+names(Carseats)
+
+lm.fit = lm(Sales ~.+Income:Advertising+Price:Age, data=Carseats)
+
+summary(lm.fit)
+
+attach(Carseats)
+
+contrasts(ShelveLoc)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
