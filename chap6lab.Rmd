@@ -1,0 +1,152 @@
+---
+title: "ISLR Chapter 6 Lab"
+output: html_document
+---
+
+Linear Model Selection and Regularization
+
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Best subset selection:
+```{r}
+library(ISLR)
+
+names(Hitters)
+
+dim(Hitters)
+
+sum(is.na(Hitters$Salary))
+
+```
+
+Remove rows with missing values:
+
+```{r}
+Hitters = na.omit(Hitters)
+
+dim(Hitters)
+
+sum(is.na(Hitters))
+
+```
+
+
+
+Apply best subset regression:
+```{r}
+library(leaps)
+
+regfit.full = regsubsets(Salary~.,data=Hitters)
+
+summary(regfit.full)
+
+```
+
+
+
+Fit 19 variable model:
+```{r}
+
+regfit.full = regsubsets(Salary~.,data=Hitters,nvmax=19)
+
+reg.summary = summary(regfit.full)
+
+```
+
+
+
+Examine statistics of model fit:
+```{r}
+names(reg.summary)
+
+reg.summary$rsq
+
+```
+
+
+Plot model evaluation, and indicate best variable #:
+```{r}
+par(mfrow=c(2,2))
+
+# RSS
+plot(reg.summary$rss, xlab="#Variables", ylab="RSS", type="l")
+
+
+# Adj R2
+plot(reg.summary$adjr2, xlab="#Variables", ylab="Adj R2", type="l")
+indexR2 = which.max(reg.summary$adjr2)
+points(indexR2, reg.summary$adjr2[indexR2], col="red",cex=2,pch=20)
+
+
+# Cp
+plot(reg.summary$cp, xlab="#Variables", ylab="Cp", type="l")
+indexCp = which.min(reg.summary$cp)
+points(indexCp, reg.summary$cp[indexCp], col="red",cex=2,pch=20)
+
+
+# BIC
+plot(reg.summary$bic, xlab="#Variables", ylab="BIC", type="l")
+indexBic = which.min(reg.summary$bic)
+points(indexBic, reg.summary$bic[indexBic], col="red",cex=2,pch=20)
+
+```
+
+
+Use regsubset built-in plot function:
+```{r}
+plot(regfit.full, scale="r2")
+plot(regfit.full, scale="adjr2")
+plot(regfit.full, scale="Cp")
+plot(regfit.full, scale="bic")
+```
+
+Examine coefficients for best model using BIC:
+```{r}
+coef(regfit.full, indexBic)
+```
+
+
+Forward and Backward Stepwise Selection
+```{r}
+regfit.fwd = regsubsets(Salary~.,data=Hitters,nvmax=19,method="forward")
+summary(regfit.fwd)
+
+regfit.bwd = regsubsets(Salary~.,data=Hitters,nvmax=19,method="backward")
+summary(regfit.bwd)
+```
+
+
+
+See how best 7 variable models compare for each procedure:
+```{r}
+coef(regfit.full,7)
+
+coef(regfit.fwd,7)
+
+coef(regfit.bwd,7)
+```
+
+
+Variable that are used differ between the model procedures:
+```{r}
+names(coef(regfit.full,7))
+
+names(coef(regfit.fwd,7))
+
+names(coef(regfit.bwd,7))
+```
+
+
+
+
+
+
+
+
+
+
+
+
