@@ -29,19 +29,19 @@ summary(tree.carseats)
 ```
 
 
-# Show the tree graphically:
+### Show the tree graphically:
 ```{r}
 windows()
 plot(tree.carseats)
 text(tree.carseats, pretty=0)
 ```
 
-# Disply the split criterion (somewhat messy):
+### Disply the split criterion (somewhat messy):
 ```{r}
 tree.carseats
 ```
 
-# Evaluate model on training and test data sets:
+### Evaluate model on training and test data sets:
 ```{r}
 set.seed(2)
 train = sample(1:nrow(Carseats),200)
@@ -53,7 +53,7 @@ table(tree.pred, High.test)
 ```
 
 
-# Prune the tree using cross-validation:
+### Prune the tree using cross-validation:
 ```{r}
 set.seed(3)
 cv.carseats = cv.tree(tree.carseats,FUN=prune.misclass)
@@ -63,7 +63,7 @@ cv.carseats
 
 
 
-# Plot the error rate as a function of size and k:
+### Plot the error rate as a function of size and k:
 ```{r}
 par(mfrow=c(1,2))
 plot(cv.carseats$size, cv.carseats$dev, type="b")
@@ -71,7 +71,7 @@ plot(cv.carseats$k, cv.carseats$dev, type="b")
 ```
 
 
-# Apply prune.misclass() to prune tree to ninth-node tree:
+### Apply prune.misclass() to prune tree to ninth-node tree:
 ```{r}
 prune.carseats = prune.misclass(tree.carseats,best=9)
 plot(prune.carseats)
@@ -79,14 +79,14 @@ text(prune.carseats)
 ```
 
 
-# Evaluate performance on test data set:
+### Evaluate performance on test data set:
 ```{r}
 tree.pred = predict(prune.carseats, Carseats.test, type="class")
 table(tree.pred, High.test)
 ```
 
 
-# Including more nodes reduces classification accuracy:
+### Including more nodes reduces classification accuracy:
 ```{r}
 prune.carseats = prune.misclass(tree.carseats,best=15)
 plot(prune.carseats)
@@ -98,7 +98,7 @@ table(tree.pred, High.test)
 
 # Fitting Regression Trees
 
-Fit the tree to the Boston housing data:
+### Fit the tree to the Boston housing data:
 ```{r}
 library(MASS)
 set.seed(1)
@@ -108,7 +108,7 @@ summary(tree.boston)
 ```
 
 
-# Plot the tree
+### Plot the tree
 ```{r}
 plot(tree.boston)
 text(tree.boston, pretty=0)
@@ -116,14 +116,14 @@ text(tree.boston, pretty=0)
 
 
 
-# Use cross-validation to see if pruning the tree improves performance:
+### Use cross-validation to see if pruning the tree improves performance:
 ```{r}
 cv.boston = cv.tree(tree.boston)
 plot(cv.boston$size, cv.boston$dev, type="b")
 ```
 
 
-# We can prune the tree further if desired:
+### We can prune the tree further if desired:
 ```{r}
 prune.boston = prune.tree(tree.boston, best=5)
 plot(prune.boston)
@@ -131,7 +131,7 @@ text(prune.boston, pretty=0)
 ```
 
 
-# Use the unpruned tree to make predictions on the test set:
+### Use the unpruned tree to make predictions on the test set:
 ```{r}
 yhat = predict(tree.boston, newdata=Boston[-train,])
 boston.test = Boston[-train,"medv"]
@@ -144,7 +144,7 @@ mean((yhat-boston.test)^2)
 
 # Bagging and Random Forests
 
-# Perform Bagging
+### Perform Bagging
 ```{r}
 library(randomForest)
 set.seed(1)
@@ -153,7 +153,7 @@ bag.boston
 ```
 
 
-# Performance on the test set:
+### Performance on the test set:
 ```{r}
 yhat.bag = predict(bag.boston,newdata=Boston[-train,])
 plot(yhat.bag, boston.test)
@@ -162,7 +162,7 @@ mean((yhat.bag-boston.test)^2)
 ```
 
 
-# Change number of trees:
+### Change number of trees:
 ```{r}
 bag.boston = randomForest(medv~.,data=Boston,subset=train,mtry=13,ntree=25)
 yhat.bag = predict(bag.boston,newdata=Boston[-train,])
@@ -171,7 +171,7 @@ mean((yhat.bag-boston.test)^2)
 
 
 
-# Grow Random Forest
+### Grow Random Forest
 ```{r}
 set.seed(1)
 rf.boston = randomForest(medv~.,data=Boston,subset=train, mtry=6, importance=TRUE)
@@ -180,7 +180,7 @@ mean((yhat.rf-boston.test)^2)
 ```
 
 
-# View importance of each variable:
+### View importance of each variable:
 ```{r}
 importance(rf.boston)
 
@@ -192,7 +192,7 @@ Wealth and house size are the most important variables.
 
 # Boosting
 
-## Boosted regression trees
+### Boosted regression trees
 Regression problem -> distribution = "gaussian"
 Use 5000 trees, and let the depth of the trees = 4
 ```{r}

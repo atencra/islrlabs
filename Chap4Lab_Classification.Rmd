@@ -1,0 +1,20 @@
+---
+title: "ISLR Chapter 4 Classification"
+author: "CAA"
+output: html_document
+---
+
+
+R Computer Lab for Introduction to Statistical Learning, Chapter 4: Classification
+
+
+# The Validation Set Approach
+
+
+### Split observations into two halves:
+
+```{r}
+library(ISLR)
+set.seed(1)
+train = sample(392, 196)
+```
