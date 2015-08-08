@@ -5,16 +5,365 @@ output: html_document
 ---
 
 
-R Computer Lab for Introduction to Statistical Learning, Chapter 4: Classification
+R Computer Lab for Introduction to Statistical Learning, Chapter 4: Classification (Page 127)
 
 
-# The Validation Set Approach
+# Logistic Regression, LDA, QDA, and KNN
 
+## Logistic Regression
 
-### Split observations into two halves:
+### Stock market data:
 
 ```{r}
 library(ISLR)
-set.seed(1)
-train = sample(392, 196)
+names(Smarket)
+dim(Smarket)
+summary(Smarket)
+
+cor(Smarket[,-9]) # column nine has labeled data
+
+plot(Smarket$Volume)
 ```
+
+
+### Logistic Regression
+```{r}
+glm.fit = glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume,
+      data=Smarket,family=binomial)
+
+summary(glm.fit)
+
+coef(glm.fit)
+
+summary(glm.fit)$coef
+
+summary(glm.fit)$coef[,4]
+
+glm.probs = predict(glm.fit, type="response")
+
+glm.probs[1:10]
+
+contrasts(Smarket$Direction)
+
+d = dim(Smarket)
+glm.pred = rep("Down", d[1])
+
+glm.pred[glm.probs>0.5] = "Up"
+
+
+# Confusion matrix using R's table function
+table(glm.pred, Smarket$Direction)
+
+
+# Get performance through indexing instead of table function
+indexDownDown = which(glm.pred=="Down" & Smarket$Direction=="Down")
+
+indexUpUp = which(glm.pred=="Up" & Smarket$Direction=="Up")
+
+performance = (length(indexDownDown)+length(indexUpUp))/d[1]
+
+performance
+
+mean(glm.pred==Smarket$Direction) # same value as performance
+```
+
+
+### Run Logistic regression on training and test sets
+```{r}
+train = (Smarket$Year<2005)
+Smarket.2005 = Smarket[!train,]
+dim(Smarket.2005)
+Direction.2005 = Smarket$Direction[!train]
+
+# train the model
+glm.fit = glm(Direction ~ Lag1+Lag2+Lag2+Lag3+Lag4+Lag5+Volume,
+              data=Smarket,family=binomial,subset=train)
+
+# predict on test set
+glm.probs = predict(glm.fit,Smarket.2005,type="response")
+
+glm.pred = rep("Down", 252)
+glm.pred[glm.probs>0.5]="Up"
+table(glm.pred,Direction.2005)
+
+mean(glm.pred==Direction.2005)
+
+
+# Do it my way:
+nObs = length(Direction.2005)
+indexDownDown = which(glm.pred=="Down" & Direction.2005=="Down")
+
+indexUpUp = which(glm.pred=="Up" & Direction.2005=="Up")
+
+performance = (length(indexDownDown)+length(indexUpUp))/nObs
+
+performance
+```
+
+
+### Fit reduced Logistic regression model
+```{r}
+glm.fit = glm(Direction~Lag1+Lag2,data=Smarket,family=binomial, subset=train)
+glm.probs = predict(glm.fit, Smarket.2005,type="response")
+nObs = length(Direction.2005)
+glm.pred = rep("Down", nObs)
+glm.pred[glm.probs>0.5] = "Up"
+table(glm.pred, Direction.2005)
+
+mean(glm.pred==Direction.2005)
+
+# More general way:
+indexDownDown = which(glm.pred=="Down" & Direction.2005=="Down")
+
+indexUpUp = which(glm.pred=="Up" & Direction.2005=="Up")
+
+performance = (length(indexDownDown)+length(indexUpUp))/nObs
+
+performance
+```
+
+
+
+
+### Predict using specific values for Lag1 and Lag2
+```{r}
+predict(glm.fit,newdata=data.frame(Lag1=c(1.2,1.5),
+   Lag2=c(1.1,-0.8)),type="response")
+```
+
+
+# Linear Discriminant Analysis
+```{r}
+library(MASS)
+
+train = (Smarket$Year<2005)
+Smarket.2005 = Smarket[!train,]
+dim(Smarket.2005)
+Direction.2005 = Smarket$Direction[!train]
+
+lda.fit = lda(Direction~Lag1+Lag2,data=Smarket,subset=train)
+
+lda.fit
+
+plot(lda.fit)
+
+
+lda.pred = predict(lda.fit, Smarket.2005)
+
+names(lda.pred)
+
+lda.class = lda.pred$class
+
+# Performance is almost the same as Logistic regression
+table(lda.class,Direction.2005)
+
+mean(lda.class==Direction.2005)
+
+
+# Apply 50% threshold to recreate predictions from lda.pred
+sum(lda.pred$posterior[,1]>=0.5)
+
+sum(lda.pred$posterior[,1]<0.5)
+
+
+# Posterior probability corresponds to probability that 
+# market will decrease
+lda.pred$posterior[1:20,1]
+lda.class[1:20]
+
+
+# Change threshold to predict market decrease only
+# if we are very certain:
+sum(lda.pred$posterior[,1]>0.9)
+```
+
+
+
+# Quadratic Discriminant Analysis
+```{r}
+library(MASS)
+
+train = (Smarket$Year<2005)
+Smarket.2005 = Smarket[!train,]
+dim(Smarket.2005)
+Direction.2005 = Smarket$Direction[!train]
+
+qda.fit = qda(Direction~Lag1+Lag2,data=Smarket,subset=train)
+
+qda.fit
+
+plot(lda.fit)
+
+
+qda.class = predict(qda.fit, Smarket.2005)$class
+
+
+# Performance is almost the same as Logistic regression
+table(qda.class,Direction.2005)
+
+mean(qda.class==Direction.2005)
+```
+
+
+
+# K-Nearest Neighbors (KNN)
+
+### Set-up data
+```{r}
+library(class)
+
+# The KNN function needs four inputs:
+# 1. matrix of predictors for training (training data)
+# 2. predictor matrix for making predictions (test data)
+# 3. class labels for training
+# 4. number of neighbors to use
+
+train.X = cbind(Smarket$Lag1,Smarket$Lag2)[train,]
+test.X = cbind(Smarket$Lag1,Smarket$Lag2)[!train,]
+train.Direction = Smarket$Direction[train]
+```
+
+### Train model, make predictions, evaluate performance for k=1 neighbor
+```{r}
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Direction,k=1)
+table(knn.pred, Direction.2005)
+
+nObs = length(Direction.2005)
+indexDownDown = which(knn.pred=="Down" & Direction.2005=="Down")
+
+indexUpUp = which(knn.pred=="Up" & Direction.2005=="Up")
+
+performance = (length(indexDownDown)+length(indexUpUp))/nObs
+
+performance
+
+# 50% isn't very good.
+```
+
+### Try with more neighbors (k=3):
+```{r}
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Direction,k=3)
+table(knn.pred, Direction.2005)
+
+nObs = length(Direction.2005)
+indexDownDown = which(knn.pred=="Down" & Direction.2005=="Down")
+
+indexUpUp = which(knn.pred=="Up" & Direction.2005=="Up")
+
+performance = (length(indexDownDown)+length(indexUpUp))/nObs
+
+performance
+```
+
+
+# Application to Caravan Insurance Data
+
+
+### First use K-Nearest Neighbors
+```{r}
+library(ISLR)
+
+d = dim(Caravan)
+d
+
+summary(Caravan$Purchase)
+
+# Proportions of purchases:
+length( which(Caravan$Purchase == "Yes") ) / length(Caravan$Purchase)
+
+
+# Standardize data:
+stand.X = scale(Caravan[,-86]) # column 86 has purchase
+
+var(Caravan[,1])
+
+var(Caravan[,2])
+
+var(stand.X[,1])
+
+var(stand.X[,2])
+
+
+
+# Fit KNN model:
+
+test = 1:1000
+train.X = stand.X[-test,]
+test.X = stand.X[test,]
+train.Y = Caravan$Purchase[-test]
+test.Y = Caravan$Purchase[test]
+
+set.seed(1)
+knn.pred = knn(train.X, test.X, train.Y, k=1)
+mean(test.Y != knn.pred)
+
+mean(test.Y != "No")
+
+# If you only care about who buys insurance:
+table(knn.pred, test.Y)
+
+indYN = which(knn.pred=="Yes" & test.Y == "No")
+indYY = which(knn.pred=="Yes" & test.Y == "Yes")
+performance = length(indYY) / (length(indYN)+length(indYY))
+performance
+
+
+# Try for K=3 neighbors:
+knn.pred = knn(train.X, test.X, train.Y, k=3)
+table(knn.pred, test.Y)
+
+indYN = which(knn.pred=="Yes" & test.Y == "No")
+indYY = which(knn.pred=="Yes" & test.Y == "Yes")
+performance = length(indYY) / (length(indYN)+length(indYY))
+performance
+
+
+# Try for K=5 neighbors:
+knn.pred = knn(train.X, test.X, train.Y, k=5)
+table(knn.pred, test.Y)
+
+indYN = which(knn.pred=="Yes" & test.Y == "No")
+indYY = which(knn.pred=="Yes" & test.Y == "Yes")
+performance = length(indYY) / (length(indYN)+length(indYY))
+performance
+
+```
+
+
+### Now try Logistic regression:
+```{r}
+glm.fit = glm(Purchase~.,data=Caravan,family=binomial,
+   subset=-test)
+glm.probs = predict(glm.fit, Caravan[test,],type="response")
+glm.pred = rep("No",1000)
+glm.pred[glm.probs>0.5] = "Yes"
+table(glm.pred, test.Y)
+
+indYN = which(glm.pred=="Yes" & test.Y == "No")
+indYY = which(glm.pred=="Yes" & test.Y == "Yes")
+performance = length(indYY) / (length(indYN)+length(indYY))
+performance
+
+
+# Change threshold from 0.5 to 0.25:
+glm.pred = rep("No",1000)
+glm.pred[glm.probs>0.25] = "Yes"
+table(glm.pred, test.Y)
+
+indYN = which(glm.pred=="Yes" & test.Y == "No")
+indYY = which(glm.pred=="Yes" & test.Y == "Yes")
+performance = length(indYY) / (length(indYN)+length(indYY))
+performance
+
+# We get 1/3 correct, which is very good!
+```
+
+
+
+
+
+
+
+
