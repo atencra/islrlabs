@@ -47,12 +47,20 @@ fit5= lm(wage~poly(age ,5) ,data=Wage)
 anova(fit1, fit2, fit3, fit4, fit5)
 
 
+fit1 = lm(wage~education+age,data=Wage)
+fit2 = lm(wage~education+poly(age,2),data=Wage)
+fit3 = lm(wage~education+poly(age,3),data=Wage)
+anova(fit1,fit2,fit3)
+
+
 coef(summary(fit5))
 
 
 fit = glm(I(wage>250)~poly(age,4),data=Wage,family=binomial)
 
 preds = predict(fit,newdata=list(age=age.grid),se=T)
+
+
 
 pfit = exp(preds$fit) / (1 + exp(preds$fit))
 
@@ -63,10 +71,79 @@ se.bands = exp(se.bands.logit)/(1+exp(se.bands.logit))
 preds = predict(fit,newdata=list(age=age.grid),type="response",se=T)
 
 
+
 plot(age,I(wage>250), xlim=agelims, type="n",ylim=c(0,0.2))
+points(jitter(age),I((wage>250)/5),cex=0.5,pch="|",
+       col="darkgrey")
+lines(age.grid,pfit,lwd=2,col="blue")
+matlines(age.grid,se.bands,lwd=1,col="blue",lty=3)
 
 
 
 
+# Fit a step function
+table(cut(age,4))
+fit = lm(wage~cut(age,4),data=Wage)
+coef(summary(fit))
 
+
+# Splines
+library(splines)
+fit = lm(wage~bs(age,knots=c(25,40,60)),data=Wage)
+pred = predict(fit,newdata=list(age=age.grid),se=T)
+plot(age,wage,col="gray")
+lines(age.grid,pred$fit,lwd=2)
+
+# Need to finish
+
+
+
+# GAMs
+
+# Fit GAM to predict wage
+
+gm1 = lm(wage ~ns(year,4)+ns(age,5)+education,data=Wage)
+
+
+library(gam)
+
+gam.m3 = gam(wage~s(year,4)+s(age,5)+education,data=Wage)
+
+
+par(mfrow=c(1,3))
+plot(gam.m3,se=TRUE,col="blue")
+plot.gam(gam1,se=TRUE,col="red")
+
+
+gam.m1 = gam(wage~s(age,5)+education,data=Wage)
+gam.m2 = gam(wage~year+s(age,5)+education,data=Wage)
+anova(gam.m1,gam.m2,gam.m3,test="F")
+
+summary(gam.m3)
+
+
+preds = predict(gam.m2,newdata=Wage)
+
+gam.lo = gam(wage~s(year,df=4)+lo(age,span=0.7)+education,
+      data=Wage)
+plot.gam(gam.lo,se=TRUE,col="green")
+
+gam.lo.i = gam(wage~lo(year,age,span=0.5)+education,
+               data=Wage)
+
+library(akima)
+plot(gam.lo.i)
+
+
+gam.lr = gam(I(wage>250)~year+s(age,df=5)+education,
+             family=binomial,data=Wage)
+
+par(mfrow=c(1,3))
+plot(gam.lr,se=T,col="green")
+table(education,I(wage>250))
+
+
+gam.lr.s = gam(I(wage>250)~year+s(age,df=5)+education,
+               family=binomial,data=Wage,subset=(education!="1. < HS Grad"))
+plot(gam.lr.s,se=T,col="green")
 
